@@ -1,0 +1,673 @@
+% !TEX program = pdflatex
+\documentclass{beamer}
+% \documentclass{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\definecolor{THUpurple}{RGB}{102,8,116}
+
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\lstset{language=Python,keywordstyle={\bfseries \color{blue}}}
+\usepackage{pdfpages}
+\usepackage{makecell}
+\usepackage[EULERGREEK]{sansmath}
+\usepackage{tikz}
+\usefonttheme[onlymath]{serif}
+
+\newcommand{\ud}{\mathrm{d}}
+\newcommand{\mev}{\mathrm{MeV}}
+\newcommand{\gev}{\mathrm{GeV}}
+
+\setbeamercolor{structure}{fg=THUpurple}
+\setbeamersize{text margin left=10mm,text margin right=10mm}
+% \setlength{\belowcaptionskip}{-2mm}
+\title[Waveform Analysis]{A Survey of PMT Waveform Analysis Methods}
+\author[Dacheng Xu]{Dacheng Xu \\ [4mm] In cooperation with \and Erjin Bao \and Yiyang Wu  \\ Benda Xu \and Yu Xu \and Geliang Zhang \\ [4mm] \includegraphics[height=2cm]{img/Tsinghua_University_Logo.png} \hspace{6mm} \includegraphics[height=2cm]{img/Js.png} \\ [4mm] at DANCE Machine Learning Workshop 2020 \\ [-8mm]}
+\date[DANCE]{August 4, 2020}
+
+\AtBeginSection[]
+{
+    \begin{frame}[noframenumbering]
+        \frametitle{Outline}
+        \thispagestyle{empty}
+        \tableofcontents[currentsection]
+    \end{frame}
+}
+
+\begin{document}
+\captionsetup[figure]{labelfont={bf},name={Fig}}
+\frame{\titlepage}
+
+\begin{frame}[noframenumbering]
+\frametitle{Outline}
+\thispagestyle{empty}
+\tableofcontents
+\end{frame}
+
+\section{Motivation}
+\begin{frame}
+\setlength{\abovecaptionskip}{0mm}
+\setlength{\belowcaptionskip}{0mm}
+\setcounter{page}{0}
+\frametitle{CJPL}
+\begin{columns}
+\column{0.45\textwidth}
+\begin{figure}
+    \centering
+    \caption{China JinPing Underground Laboratory\protect\footnotemark[1]}
+    \includegraphics[width=1.0\linewidth]{img/WorldMap.jpg}
+\end{figure}
+\column{0.55\textwidth}
+\begin{figure}
+    \centering
+    \caption{Total intensity of $\mu$ at different underground sites\protect\footnotemark[2]}
+    \includegraphics[width=1.0\linewidth]{img/muonlab.pdf}
+\end{figure}
+\end{columns}
+\begin{itemize}
+    \item Overburden $\sim2400\mathrm{m}$
+    \item Extremely low cosmic-ray $\mu$ flux
+    \item Low reactor neutrino flux
+    \item Ideal site of low background physics research
+\end{itemize}
+\footnotetext[1]{{\tiny Beacom et al. Physics prospects of the Jinping neutrino experiment 2017}}
+\footnotetext[2]{{\tiny Guo et al. Muon Flux Measurement at China Jinping Underground Laboratory 2020}}
+\end{frame}
+
+\begin{frame}
+\frametitle{Jinping Neutrino Experiment}
+\setlength{\abovecaptionskip}{-2mm}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.25\linewidth]{img/J.png}
+\end{figure}
+\vspace{-4mm}
+\begin{columns}
+\column{0.33\textwidth}
+\begin{center}
+    Ongoing
+\end{center}
+\begin{figure}
+    \centering
+    \caption{1-ton prototype}
+    \includegraphics[width=0.6\linewidth]{img/prototype.jpeg}
+\end{figure}
+\column{0.34\textwidth}
+\begin{center}
+    Next
+\end{center}
+\begin{figure}
+    \centering
+    \caption{$\sim$100t detector}
+    \includegraphics[width=0.6\linewidth]{img/100tondetector.png}
+\end{figure}
+\column{0.33\textwidth}
+\begin{center}
+    Future
+\end{center}
+\begin{figure}
+    \centering
+    \caption{$\sim$5000t detector}
+    \includegraphics[width=0.6\linewidth]{img/DetectoratJinping.jpg}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Neutrino Detector}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \caption{Future Detector at Jinping}
+    \includegraphics[width=1.0\linewidth]{img/DetectoratJinping.jpg}
+\end{figure}
+\column{0.5\textwidth}
+\begin{itemize}
+    \item Neutrino involved interactions in liquid scintillator produce light
+    \item PMT: single photon detector
+    \item Timing resolution is crucial in neutrino event reconstruction
+    \item How to improve PMT's timing resolution? 
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{PMT Time Resolution}
+\setlength{\abovecaptionskip}{-2mm}
+\setlength{\belowcaptionskip}{0mm}
+\begin{columns}
+\column{0.6\textwidth}
+\begin{figure}
+    \centering
+    \caption{PMT}
+    \includegraphics[width=0.25\linewidth]{img/PMT.png}
+\end{figure}
+\column{0.4\textwidth}
+\begin{center}
+    3 individual processes:
+\end{center}
+\vspace{-4mm}
+\begin{itemize}
+    \item Photon-Electron conversion (photoelectric effect)
+    \item Electron collection
+    \item Amplification
+\end{itemize}
+\end{columns}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \caption{PMT Single PE response}
+    \includegraphics[width=1.0\linewidth]{img/pmtspe.png}
+\end{figure}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \caption{Pile-up in waveform}
+    \includegraphics[width=1.0\linewidth]{img/wave.png}
+\end{figure}
+\end{columns}
+Pile-up will significantly worsen timing resolution! 
+\end{frame}
+
+\begin{frame}
+\frametitle{Naive Method to solve pile-up problem}
+\hspace{4mm}Naively, when handling PMT waveforms, we record:
+\begin{itemize}
+    \item First HitTime
+    \item Integration of Waveform (Charge)
+\end{itemize}
+\begin{figure}
+    \centering
+    % \caption{Traditional Recorded Waveform}
+    \includegraphics[width=0.8\linewidth]{img/previous.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{New Goal to determine HitTime}
+\begin{itemize}
+    \item Extract information of all hits in 1 DAQ window
+    \item Including: HitTime (the time when electron hit the first dynode) \& Charge or \#PE (number of photo-electrons)
+\end{itemize}
+\begin{figure}
+    \centering
+    % \caption{Traditional Recorded Waveform}
+    \includegraphics[width=0.8\linewidth]{img/goal.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Significant change of Charge for single PE}
+% \setlength{\abovecaptionskip}{0mm}
+% \setlength{\belowcaptionskip}{0mm}
+\hspace{8mm}Single PE induced charge can be a wide distribution, rather than a single value
+\begin{columns}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \caption{10 Single PE responses}
+    \includegraphics[width=1.0\linewidth]{img/spewaves.png}
+\end{figure}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \caption{Distribution of Charge}
+    \includegraphics[width=1.0\linewidth]{img/chargehist.png}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\section{Figure of merit: Wasserstein Distance}
+\begin{frame}
+\frametitle{Figure of merit: Wasserstein Distance}
+\begin{center}
+    How to measure the difference (distance) between reconstruction result \& truth properly?
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Familiar Distances}
+\begin{columns}
+\column{0.3\textwidth}
+\begin{itemize}
+    \item $L_{1}$ : $\int|p-q|$
+    \item $L_{2}$ : $\int(p-q)^{2}$
+    \item $\chi^{2}$ : $\int\frac{(p-q)^{2}}{q}$
+    \item $\cdots$
+\end{itemize}
+\column{0.7\textwidth}
+Shortcoming:
+\begin{itemize}
+    \item Cannot compare discrete distribution with continuous distribution
+    \item Not sensitive to the time distance 
+\end{itemize}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/tab.png}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\input{Wasserstain}
+
+\begin{frame}
+\frametitle{Wasserstein Distance Demo}
+\setlength{\abovecaptionskip}{-2mm}
+\setlength{\belowcaptionskip}{0mm}
+$D_{W}=\sum_t|\mathrm{CDF}_a(t) - \mathrm{CDF}_b(t)|$ \\
+$CDF$: Cumulative Distribution Function
+\begin{columns}
+\column{0.4\textwidth}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/a.png}
+\end{figure}
+\vspace{-7mm}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/b.png}
+\end{figure}
+\column{0.1\textwidth}
+\begin{tikzpicture}
+    \node[] at (-2.5, 1) (a1) {};
+    \node[] at (-1, 0.5) (a2) {};
+    \node[] at (-2.5, -1) (b1) {};
+    \node[] at (-1, -0.5) (b2) {};
+    \draw [->, line width=0.5mm] (a1) -- node[anchor=south] {CDF} (a2);
+    \draw [->, line width=0.5mm] (b1) -- node[anchor=north] {CDF} (b2);
+\end{tikzpicture}
+\column{0.5\textwidth}
+\vspace{2mm}\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/ab.png}
+\end{figure}
+\rightline{W-dist = $1.8\mathrm{ns}$}
+\end{columns}
+This definition of distance is equivalent to Wasserstein Distance
+\end{frame}
+
+\section{Waveform Analysis Methods}
+
+\begin{frame}
+\frametitle{Test Setup}
+\begin{columns}
+\column{0.4\textwidth}
+\hspace{4mm}Input \& Output:
+\begin{itemize}
+    \item Input: pedestal subtracted PMT waveform
+    \item Output: weight (Charge or \#PE) sequence
+\end{itemize}
+\hspace{4mm}Loss:
+
+\hspace{4mm}Wasserstein distance \\ \hspace{4mm}between reconstructed \\ \hspace{4mm}result \& truth
+\column{0.6\textwidth}
+\setlength{\abovecaptionskip}{-2mm}
+\setlength{\belowcaptionskip}{0mm}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{img/wave.png}
+    \includegraphics[width=0.9\linewidth]{img/charge.png}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Data Sample}
+TotalPEnum is the count of HitTime in one waveform
+\begin{columns}
+\column{0.6\textwidth}
+\begin{figure}
+    \centering
+    \caption{TotalPEnum Histogram}
+    \includegraphics[width=1.0\linewidth]{img/penum.png}
+\end{figure}
+\column{0.4\textwidth}
+\begin{figure}
+    \centering
+    \caption{Data Structure}
+    \includegraphics[width=1.0\linewidth]{img/dataset.png}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 1: Find Peak}
+\begin{figure}
+    \centering
+    \caption{Find Peak Method Demo, W-dist = 4.02}
+    \includegraphics[width=0.9\linewidth]{img/findpeak.png}
+\end{figure}
+\vspace{-4mm}
+\begin{center}
+    Average W-dist = 10.70 (Charge), 11.62 (\#PE)
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 2: Waveform Shift}
+\begin{figure}
+    \centering
+    \caption{Waveform Shift Method Demo, W-dist = 10.75}
+    \includegraphics[width=0.9\linewidth]{img/threshold.png}
+\end{figure}
+\vspace{-4mm}
+\begin{center}
+    Average W-dist = 3.67 (Charge), 4.69 (\#PE)
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 3: Fourier Transform (Deconvolution)}
+\begin{columns}
+\column{0.6\textwidth}
+\begin{figure}
+    \centering
+    \caption{Fourier Deconvolution Demo, W-dist = 1.63}
+    \includegraphics[width=1.0\linewidth]{img/fftrans.png}
+\end{figure}
+\vspace{-4mm}
+\begin{center}
+    Average W-dist = 1.44 (Charge), 3.08 (\#PE)
+\end{center}
+\column{0.4\textwidth}
+Steps:
+\begin{enumerate}
+    \item FFT of Waveform \& Single PE response
+    \item Rectangular filter of FFT(Waveform)
+    \item FFT(Charge) = FFT(Waveform) / FFT(SPE)
+    \item IFFT of FFT(Charge)
+\end{enumerate}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 4: Lucy Deconvolution}
+\begin{columns}
+\column{0.6\textwidth}
+\begin{figure}
+    \centering
+    \caption{Lucy Deconvolution Demo, W-dist = 1.25}
+    \includegraphics[width=1.0\linewidth]{img/lucyddm.png}
+\end{figure}
+\vspace{-4mm}
+\begin{center}
+    Average W-dist = 0.93 (Charge), 2.74 (\#PE)
+\end{center}
+\column{0.4\textwidth}
+\begin{enumerate}
+    \item Lucy-Richardson deconvolution
+    \item Nonlinear iterative method with Charge $>$ 0 constraint
+\end{enumerate}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 5: Convolutional Neural Network}
+\begin{columns}
+\column{0.35\textwidth}
+\begin{figure}[H]
+    \centering
+    \caption{CNN Structure}
+    \includegraphics[width=0.8\textwidth]{img/model.png}
+\end{figure}
+\column{0.65\textwidth}
+\lstinputlisting[language=Python, basicstyle=\tiny]{CNN}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 5: Convolutional Neural Network}
+\Large Training Process \normalsize
+\begin{columns}
+\column{0.35\textwidth}
+\begin{itemize}
+    \item Train CNN by each PMT Channel
+    \item $\sim$450k waveform for each Channel
+    \item Looping dataset 36 times
+    \item Initial learning rate = $0.01$
+\end{itemize}
+\column{0.65\textwidth}
+\begin{figure}
+    \centering
+    \caption{Loss variation during training}
+    \includegraphics[width=1.0\linewidth]{img/epoch.png}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 5: Convolutional Neural Network}
+\Large Result \normalsize
+\begin{figure}
+    \centering
+    \caption{CNN \#PE Result Histogram}
+    \includegraphics[width=0.85\linewidth]{img/takarapenumhist.png}
+\end{figure}
+\begin{center}
+    Average W-dist = 2.25 (Charge), 0.76 (\#PE)
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 5: CNN Result}
+\setlength{\abovecaptionskip}{0mm}
+\setlength{\belowcaptionskip}{0mm}
+\begin{figure}
+    \centering
+    \caption{CNN \#PE W-dist vs TotalPEnum}
+    \includegraphics[width=0.65\linewidth]{img/takarapenumstats.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 6: Fitting (Matching Pursuit)}
+\begin{itemize}
+    \item Fitting parameter: weight of each HitTime
+    \item Loss is residual sum squares of Waveform
+    \item Loss = $\sum(Wave_{recon}-Wave_{truth})^{2}$
+    \item using l\_bfgs\_b
+\end{itemize}
+\setlength{\abovecaptionskip}{0mm}
+\setlength{\belowcaptionskip}{0mm}
+\begin{figure}
+    \centering
+    \caption{Fitting Demo, W-dist = 1.51}
+    \includegraphics[width=0.85\linewidth]{img/demo.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 6: Fitting Result}
+\begin{figure}
+    \centering
+    \caption{Fitting Charge Result Histogram}
+    \includegraphics[width=0.85\linewidth]{img/xiaopeipchargehist.png}
+\end{figure}
+\begin{center}
+    Average W-dist = 0.54 (Charge), 2.46 (\#PE)
+\end{center}
+\end{frame}
+
+\begin{frame}
+\frametitle{Method 6: Fitting Result}
+\setlength{\abovecaptionskip}{0mm}
+\setlength{\belowcaptionskip}{0mm}
+\begin{figure}
+    \centering
+    \caption{Fitting Charge W-dist vs TotalPEnum}
+    \includegraphics[width=0.65\linewidth]{img/xiaopeipchargestats-1.png}
+\end{figure}
+\end{frame}
+
+\section{Result}
+\begin{frame}
+\frametitle{Result: Accuracy}
+\begin{figure}
+    \centering
+    \caption{Distances of methods, error bar 10 - 90 percentile (Charge)}
+    \includegraphics[width=1.0\linewidth]{img/summarycharge.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Result: Accuracy}
+\begin{figure}
+    \centering
+    \caption{Distances of methods, error bar 10 - 90 percentile (\#PE)}
+    \includegraphics[width=1.0\linewidth]{img/summarypenum.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Result: Efficiency}
+\begin{table}
+    \centering
+    \caption{Reconstruction Efficiency}
+    \begin{tabular}{c|c|c}
+        \hline
+        &  & Performance \\
+        \hline
+        CNN & Charge & 6.0s/$10^{5}$Wf (GPU) \\
+        \hline
+        CNN & \#PE & 6.0s/$10^{5}$Wf (GPU)\\
+        \hline
+        Fitting & Charge & 2000s/$10^{5}$Wf (CPU) \\
+        \hline
+        Fitting & \#PE & 2000s/$10^{5}$Wf (CPU) \\
+        \hline
+        LucyDDM & Charge & 24s/$10^{5}$Wf (CPU) \\
+        \hline
+        LucyDDM & \#PE & 24s/$10^{5}$Wf (CPU) \\
+        \hline
+    \end{tabular}
+\end{table}
+\hspace{4mm}\begin{itemize}
+    \item GPU: Using one graphic card of NVIDIA Tesla K80
+    \item CPU: Using 50 CPU cores of AMD EYPC 7702
+\end{itemize}
+\end{frame}
+
+\section{Summary \& Outlook}
+\begin{frame}
+\frametitle{Summary \& Outlook}
+\begin{itemize}
+    \item Fitting method is the best for reconstruction of Charge, while LucyDDM looks promising. 
+    \item CNN method is the best for reconstruction of \#PE, and it is also the fastest (GPU accelerated). 
+    \item We developed several representative methods to extract photon timing information hidden in PMT waveforms. 
+    \item These methods will improve the precision of event reconstruction and particle identification. 
+    \item We are working on applying these methods on analyzing real data. 
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Acknowledgement}
+\begin{itemize}
+    \item Prof. Shaomin Chen \& Prof. Zhe Wang, Tsinghua University, Jinping Neutrino Experiment Collaboration
+    \item Developers of JSAP(Jinping neutrino experiment Simulation and Analysis Package), Ziyi Guo et al. 
+    \item Aiqiang Zhang \& Jihui Pei, Tsinghua University
+    \item Student Association of Science and Technology, Department of Engineering Physics, Tsinghua University
+    \item Student Association of Science and Technology, Department of Physics, Tsinghua University
+    \item Student Association of Science and Technology, Department of Computer Science and Technology, Tsinghua University
+\end{itemize}
+\end{frame}
+
+\appendix
+\section{Backup}
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - Poisson Distance \& Charge Diff}
+\hspace{4mm}Poisson Distance is used \textbf{only} when reconstruct \#PE
+\begin{itemize}
+    \item $Q = \sum \#PE_{truth_i}; q = \sum \#PE_{recon_i}$
+    \item $D_{p} = |Q-q|*\mathrm{Poisson}(Q|Q)$
+\end{itemize}
+\hspace{4mm}Charge Diff is used \textbf{only} when reconstruct Charge
+\end{frame}
+
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - TotalPEpos vs TotalPEnum}
+\begin{columns}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/pepos.png}
+\end{figure}
+\column{0.5\textwidth}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/penum.png}
+\end{figure}
+\end{columns}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - Fitting Result}
+\begin{figure}
+    \centering
+    \caption{Fitting \#PE Result Histogram}
+    \includegraphics[width=0.85\linewidth]{img/xiaopeippenumhist.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - Fitting Result}
+\setlength{\abovecaptionskip}{0mm}
+\setlength{\belowcaptionskip}{0mm}
+\begin{figure}
+    \centering
+    \caption{Fitting \#PE W-dist vs PEpos}
+    \includegraphics[width=0.65\linewidth]{img/xiaopeippenumstats.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - CNN Result}
+\begin{figure}
+    \centering
+    \caption{CNN Charge Result Histogram}
+    \includegraphics[width=0.85\linewidth]{img/takarachargehist.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - CNN Result}
+\setlength{\abovecaptionskip}{0mm}
+\setlength{\belowcaptionskip}{0mm}
+\begin{figure}
+    \centering
+    \caption{CNN Charge W-dist vs PEpos}
+    \includegraphics[width=0.65\linewidth]{img/takarachargestats.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - Large W-dist}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/demoe15231c15.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[noframenumbering]
+\thispagestyle{empty}
+\frametitle{Backup - Large W-dist}
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{img/demoe22746c2.png}
+\end{figure}
+\end{frame}
+
+\end{document}
